@@ -1,0 +1,5 @@
+{
+  "baseline_accuracy": 0.644,
+  "baseline_f1_score": 0.6417,
+  "source": "best stable deployed model before regression gate"
+}
