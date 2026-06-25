@@ -8,4 +8,4 @@ original_size = len(df_train)
 df_updated = pd.concat([df_train, df_new], ignore_index=True)
 df_updated.to_csv("data/train_phase1.csv", index=False)
 
-print(f"Cap nhat du lieu: {original_size} -> {len(df_updated)} mau")
+print(f"Cập nhật dữ liệu: {original_size} -> {len(df_updated)} mẫu")

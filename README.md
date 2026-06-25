@@ -1,7 +1,7 @@
 # Day 21 - MLOps Lab: CI/CD for AI Systems
 
 Student: Thai Thi Yen Nhi
-Course: AIInAction - VinUni
+StudentID: 2A202600783
 Topic: Day 21 - CI/CD for AI Systems
 
 ## Lab Goals
