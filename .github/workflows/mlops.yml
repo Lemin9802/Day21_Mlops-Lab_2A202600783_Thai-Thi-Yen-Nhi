@@ -12,6 +12,7 @@ on:
       - "run_stage.py"
       - "generate_data.py"
       - "requirements.txt"
+      - "config/**"
       - ".github/workflows/mlops.yml"
   schedule:
     - cron: "0 0 * * *" 
@@ -182,21 +183,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check eval gate
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check eval and regression gate
         run: |
           python - <<'EOF'
+          import json
+
           accuracy = float("${{ needs.train.outputs.accuracy }}")
           threshold = float("${{ needs.train.outputs.eval_threshold }}")
 
-          print(f"Accuracy: {accuracy}")
-          print(f"Threshold: {threshold}")
+          with open("config/baseline_metrics.json", "r", encoding="utf-8") as f:
+              baseline = json.load(f)
+
+          baseline_accuracy = float(baseline["baseline_accuracy"])
+
+          print(f"Current accuracy: {accuracy}")
+          print(f"Eval threshold: {threshold}")
+          print(f"Baseline accuracy: {baseline_accuracy}")
 
           if accuracy < threshold:
               raise SystemExit(
                   f"Eval gate failed: accuracy={accuracy:.4f} < threshold={threshold:.4f}"
               )
 
+          if accuracy < baseline_accuracy:
+              raise SystemExit(
+                  f"Regression gate failed: accuracy={accuracy:.4f} < baseline={baseline_accuracy:.4f}"
+              )
+
           print("Eval gate passed.")
+          print("Regression gate passed: no deploy-blocking regression detected.")
           EOF
 
   deploy:
