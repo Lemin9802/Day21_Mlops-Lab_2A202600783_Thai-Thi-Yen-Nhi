@@ -1,89 +1,105 @@
-import os
 import json
+import os
+
 import numpy as np
 import pandas as pd
+
 from src.train import train
 
 
 FEATURE_NAMES = [
-    "fixed_acidity", "volatile_acidity", "citric_acid", "residual_sugar",
-    "chlorides", "free_sulfur_dioxide", "total_sulfur_dioxide", "density",
-    "pH", "sulphates", "alcohol", "wine_type",
+    "fixed acidity",
+    "volatile acidity",
+    "citric acid",
+    "residual sugar",
+    "chlorides",
+    "free sulfur dioxide",
+    "total sulfur dioxide",
+    "density",
+    "pH",
+    "sulphates",
+    "alcohol",
+    "wine_type",
 ]
 
 
 def _make_temp_data(tmp_path):
     """
-    Tao dataset nho voi cung schema Wine Quality de su dung trong test.
+    Tạo dataset nhỏ với cùng schema Wine Quality để dùng trong unit test.
+    Dataset này được tạo trong thư mục tạm của pytest, nên không phụ thuộc vào DVC hoặc cloud storage.
     """
     rng = np.random.default_rng(0)
     n = 200
 
-    # TODO 1: Tao mang X co kich thuoc (n, len(FEATURE_NAMES)) voi gia tri [0, 1)
-    # X = rng.random((n, len(FEATURE_NAMES)))
+    # Tạo ma trận feature ngẫu nhiên có cùng số cột với dữ liệu thật.
+    X = rng.random((n, len(FEATURE_NAMES)))
 
-    # TODO 2: Tao mang y gom n phan tu nguyen ngau nhien trong [0, 3)
-    # y = rng.integers(0, 3, size=n)
+    # Tạo nhãn ngẫu nhiên cho 3 class: 0, 1, 2.
+    y = rng.integers(0, 3, size=n)
 
-    # TODO 3: Xay dung DataFrame, them cot "target"
-    # df = pd.DataFrame(X, columns=FEATURE_NAMES)
-    # df["target"] = y
+    # Tạo DataFrame đúng schema mà src.train.train() mong đợi.
+    df = pd.DataFrame(X, columns=FEATURE_NAMES)
+    df["target"] = y
 
-    # TODO 4: Luu 160 dong dau lam tap huan luyen, 40 dong cuoi lam tap danh gia
-    # train_path = str(tmp_path / "train.csv")
-    # eval_path = str(tmp_path / "eval.csv")
-    # df.iloc[:160].to_csv(train_path, index=False)
-    # df.iloc[160:].to_csv(eval_path, index=False)
+    train_path = str(tmp_path / "train.csv")
+    eval_path = str(tmp_path / "eval.csv")
 
-    # TODO 5: Tra ve (train_path, eval_path)
-    # return train_path, eval_path
+    # Chia dữ liệu giả thành train/eval.
+    df.iloc[:160].to_csv(train_path, index=False)
+    df.iloc[160:].to_csv(eval_path, index=False)
 
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
+    return train_path, eval_path
 
 
 def test_train_returns_float(tmp_path):
-    """Kiem tra ham train() tra ve mot so thuc nam trong [0.0, 1.0]."""
+    """
+    Kiểm tra hàm train() trả về accuracy dạng float và nằm trong khoảng hợp lệ.
+    """
     train_path, eval_path = _make_temp_data(tmp_path)
 
-    # TODO 6: Goi ham train() voi sieu tham so nho va duong dan file vua tao
-    # acc = train({"n_estimators": 10, "max_depth": 3}, data_path=train_path, eval_path=eval_path)
+    acc = train(
+        {"n_estimators": 10, "max_depth": 3, "min_samples_split": 2},
+        data_path=train_path,
+        eval_path=eval_path,
+    )
 
-    # TODO 7: Kiem tra ket qua
-    # assert isinstance(acc, float)
-    # assert 0.0 <= acc <= 1.0
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
+    assert isinstance(acc, float)
+    assert 0.0 <= acc <= 1.0
 
 
 def test_metrics_file_created(tmp_path):
-    """Kiem tra file outputs/metrics.json duoc tao sau khi huan luyen."""
+    """
+    Kiểm tra file outputs/metrics.json được tạo và có đủ metrics chính.
+    """
     train_path, eval_path = _make_temp_data(tmp_path)
+
     train(
-        {"n_estimators": 10, "max_depth": 3},
+        {"n_estimators": 10, "max_depth": 3, "min_samples_split": 2},
         data_path=train_path,
         eval_path=eval_path,
     )
 
-    # TODO 8: Kiem tra file ton tai va noi dung dung dinh dang
-    # assert os.path.exists("outputs/metrics.json")
-    # with open("outputs/metrics.json") as f:
-    #     metrics = json.load(f)
-    # assert "accuracy" in metrics
-    # assert "f1_score" in metrics
+    assert os.path.exists("outputs/metrics.json")
 
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
+    with open("outputs/metrics.json", encoding="utf-8") as f:
+        metrics = json.load(f)
+
+    assert "accuracy" in metrics
+    assert "f1_score" in metrics
+    assert 0.0 <= metrics["accuracy"] <= 1.0
+    assert 0.0 <= metrics["f1_score"] <= 1.0
 
 
 def test_model_file_created(tmp_path):
-    """Kiem tra file models/model.pkl duoc tao sau khi huan luyen."""
+    """
+    Kiểm tra file models/model.pkl được tạo sau khi training.
+    """
     train_path, eval_path = _make_temp_data(tmp_path)
+
     train(
-        {"n_estimators": 10, "max_depth": 3},
+        {"n_estimators": 10, "max_depth": 3, "min_samples_split": 2},
         data_path=train_path,
         eval_path=eval_path,
     )
 
-    # TODO 9: Kiem tra file model ton tai
-    # assert os.path.exists("models/model.pkl")
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
+    assert os.path.exists("models/model.pkl")
