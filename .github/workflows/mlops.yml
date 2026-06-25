@@ -63,12 +63,16 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Authenticate to Google Cloud Storage
+      - name: Authenticate to Google Cloud Storage and DagsHub MLflow
         run: |
           printf '%s' '${{ secrets.GCP_SA_KEY }}' > sa-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=$PWD/sa-key.json" >> "$GITHUB_ENV"
           echo "GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}" >> "$GITHUB_ENV"
           echo "GCS_BUCKET=${{ secrets.GCS_BUCKET }}" >> "$GITHUB_ENV"
+
+          echo "MLFLOW_TRACKING_URI=${{ secrets.DAGSHUB_TRACKING_URI }}" >> "$GITHUB_ENV"
+          echo "MLFLOW_TRACKING_USERNAME=${{ secrets.DAGSHUB_USERNAME }}" >> "$GITHUB_ENV"
+          echo "MLFLOW_TRACKING_PASSWORD=${{ secrets.DAGSHUB_TOKEN }}" >> "$GITHUB_ENV"
 
       - name: Pull DVC data and model cache
         run: dvc pull
