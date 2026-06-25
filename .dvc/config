@@ -1,0 +1,4 @@
+[core]
+    remote = gcsremote
+['remote "gcsremote"']
+    url = gs://day21-mlops-2a202600783-forward-alchemy/dvc
