@@ -1,41 +1,48 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from google.cloud import storage
-import joblib
 import os
 
-app = FastAPI()
+import joblib
+from fastapi import FastAPI, HTTPException
+from google.cloud import storage
+from pydantic import BaseModel
 
-GCS_BUCKET = os.environ["GCS_BUCKET"]
-GCS_MODEL_KEY = "models/latest/model.pkl"
+
+GCS_BUCKET = os.environ.get("GCS_BUCKET", "day21-mlops-2a202600783-forward-alchemy")
+GCS_MODEL_KEY = os.environ.get("GCS_MODEL_KEY", "models/latest/model.pkl")
 MODEL_PATH = os.path.expanduser("~/models/model.pkl")
 
+LABEL_MAP = {
+    0: "thap",
+    1: "trung_binh",
+    2: "cao",
+}
 
-def download_model():
+
+def download_model() -> None:
     """
-    Tải file model.pkl tu GCS về máy khi server khởi động.
+    Tải file model.pkl từ GCS về VM khi server khởi động.
 
-    Hàm này được gọi một lần khi module được import. Sử dụng
-    GOOGLE_APPLICATION_CREDENTIALS để xác thực.
+    Trên VM, service dùng Google Cloud default credentials.
+    Trên GitHub Actions hoặc local, có thể dùng GOOGLE_APPLICATION_CREDENTIALS nếu cần.
     """
-    # TODO 1: Tạo storage.Client()
-    # client = storage.Client()
+    os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 
-    # TODO 2: Lấy bucket và blob tương ứng
-    # bucket = client.bucket(GCS_BUCKET)
-    # blob = bucket.blob(GCS_MODEL_KEY)
+    client = storage.Client()
+    bucket = client.bucket(GCS_BUCKET)
+    blob = bucket.blob(GCS_MODEL_KEY)
 
-    # TODO 3: Tải file model xuống máy
-    # blob.download_to_filename(MODEL_PATH)
+    if not blob.exists():
+        raise FileNotFoundError(
+            f"Không tìm thấy model trên GCS: gs://{GCS_BUCKET}/{GCS_MODEL_KEY}"
+        )
 
-    # TODO 4: In thông báo thành công
-    # print("Model đã được tải xuống từ GCS.")
-
-    pass  # xóa dòng này sau khi hoàn thành tất cả TODO bên trên
+    blob.download_to_filename(MODEL_PATH)
+    print(f"Model đã được tải từ gs://{GCS_BUCKET}/{GCS_MODEL_KEY} về {MODEL_PATH}")
 
 
 download_model()
 model = joblib.load(MODEL_PATH)
+
+app = FastAPI(title="Wine Quality MLOps Service")
 
 
 class PredictRequest(BaseModel):
@@ -45,30 +52,37 @@ class PredictRequest(BaseModel):
 @app.get("/health")
 def health():
     """
-    Endpoint kiểm tra sức khỏe server.
+    Endpoint kiểm tra trạng thái serving service.
     """
-    # TODO 5: Trả về dict {"status": "ok"}
-    pass  # xóa dòng này sau khi hoàn thành
+    return {
+        "status": "ok",
+        "model_path": MODEL_PATH,
+        "gcs_model": f"gs://{GCS_BUCKET}/{GCS_MODEL_KEY}",
+    }
 
 
 @app.post("/predict")
 def predict(req: PredictRequest):
     """
-    Đầu vào : JSON {"features": [f1, f2, ..., f12]}
-    Đầu ra  : JSON {"prediction": <0|1|2>, "label": <"thap"|"trung_binh"|"cao">}
+    Đầu vào: JSON {"features": [f1, f2, ..., f12]}
+    Đầu ra: JSON {"prediction": <0|1|2>, "label": <"thap"|"trung_binh"|"cao">}
     """
-    # TODO 6: Kiểm tra số lượng đặc trưng.
-    # Nếu len(req.features) != 12, raise HTTPException(status_code=400, ...)
+    if len(req.features) != 12:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Expected 12 features, received {len(req.features)}",
+        )
 
-    # TODO 7: Gọi model.predict([req.features]) để lấy kết quả dự đoán.
-    # pred = model.predict(...)
+    pred = int(model.predict([req.features])[0])
+    label = LABEL_MAP.get(pred, "unknown")
 
-    # TODO 8: Trả về dict chứa "prediction" va "label".
-    # Nhãn tương ứng: 0 -> "thap", 1 -> "trung_binh", 2 -> "cao"
-
-    pass  # xóa dòng này sau khi hoàn thành tất cả TODO ben tren
+    return {
+        "prediction": pred,
+        "label": label,
+    }
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
