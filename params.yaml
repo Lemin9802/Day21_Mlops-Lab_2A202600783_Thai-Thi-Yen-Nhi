@@ -1,5 +1,6 @@
-# Siêu tham số cho RandomForestClassifier
-# Best run hiện tại trong MLflow: accuracy=0.6440, f1_score=0.6417
+# Siêu tham số tốt nhất sau hyperparameter tuning
+# Best tuning run: random_forest_7
+# accuracy=0.6480, f1_score=0.6464
 n_estimators: 200
 max_depth: 10
-min_samples_split: 5
+min_samples_split: 2
