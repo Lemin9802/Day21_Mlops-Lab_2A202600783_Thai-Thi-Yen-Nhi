@@ -1,0 +1,105 @@
+name: MLOps Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/**.dvc'
+      - 'src/**.py'
+      - 'params.yaml'
+  workflow_dispatch:
+
+jobs:
+
+  test:
+    name: Unit Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        # TODO 1: Chay pytest tren thu muc tests/ voi co -v
+        run: # <dien lenh o day>
+
+  train:
+    name: Train
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      accuracy: ${{ steps.read_metrics.outputs.accuracy }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Authenticate to Cloud Storage
+        # TODO 2: Ghi noi dung credentials ra file tam va set bien moi truong xac thuc.
+        run: |
+          # <dien code o day>
+
+      - name: Pull data with DVC
+        # TODO 3: Pull cac file du lieu can thiet tu cloud storage bang lenh dvc pull.
+        run: # <dien lenh o day>
+
+      - name: Train model
+        run: python src/train.py
+
+      - name: Read metrics
+        id: read_metrics
+        # TODO 4: Doc gia tri accuracy tu outputs/metrics.json va set output accuracy.
+        run: |
+          # <dien code o day>
+
+      - name: Upload model to Cloud Storage
+        # TODO 5: Upload models/model.pkl len gs://<bucket>/models/latest/model.pkl.
+        run: |
+          python - <<'EOF'
+          # <dien code Python o day>
+          EOF
+
+      - name: Save metrics as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics
+          path: outputs/metrics.json
+
+  eval:
+    name: Eval
+    needs: train
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check eval gate
+        # TODO 6: Neu accuracy < 0.70 thi fail job de chan deploy.
+        run: |
+          python - <<'EOF'
+          # <dien code Python o day>
+          EOF
+
+  deploy:
+    name: Deploy
+    needs: eval
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH deploy to VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            # TODO 7: Restart service mlops-serve tren VM.
+            # TODO 8: Goi curl /health de xac nhan deploy thanh cong.
+            # <dien lenh bash o day>
