@@ -1,0 +1,79 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python run_stage.py generate_data.py
+    deps:
+    - path: generate_data.py
+      hash: md5
+      md5: e7c84386947a8c37f832a060de77683d
+      size: 1291
+    - path: run_stage.py
+      hash: md5
+      md5: d85934fc804d4b904742add489c3d065
+      size: 1524
+    outs:
+    - path: data/eval.csv
+      hash: md5
+      md5: b11de6b7adaa93a44278fd7e168b2288
+      size: 30769
+    - path: data/train_phase1.csv
+      hash: md5
+      md5: c43afab731fd6431a94f888fdc687876
+      size: 184090
+    - path: data/train_phase2.csv
+      hash: md5
+      md5: fd073d6651b2ff224c0da1eb1c049a32
+      size: 184134
+  train:
+    cmd: python run_stage.py src/train.py
+    deps:
+    - path: data/eval.csv
+      hash: md5
+      md5: b11de6b7adaa93a44278fd7e168b2288
+      size: 30769
+    - path: data/train_phase1.csv
+      hash: md5
+      md5: c43afab731fd6431a94f888fdc687876
+      size: 184090
+    - path: run_stage.py
+      hash: md5
+      md5: d85934fc804d4b904742add489c3d065
+      size: 1524
+    - path: src/train.py
+      hash: md5
+      md5: a74a542342e4f7163910901abb2b5e64
+      size: 3150
+    params:
+      params.yaml:
+        max_depth: 10
+        min_samples_split: 5
+        n_estimators: 200
+    outs:
+    - path: models/model.pkl
+      hash: md5
+      md5: a1569c659266b2b4c4ce75676f27456f
+      size: 8356065
+  evaluate:
+    cmd: python run_stage.py src/evaluate.py
+    deps:
+    - path: data/eval.csv
+      hash: md5
+      md5: b11de6b7adaa93a44278fd7e168b2288
+      size: 30769
+    - path: models/model.pkl
+      hash: md5
+      md5: a1569c659266b2b4c4ce75676f27456f
+      size: 8356065
+    - path: run_stage.py
+      hash: md5
+      md5: d85934fc804d4b904742add489c3d065
+      size: 1524
+    - path: src/evaluate.py
+      hash: md5
+      md5: 624ad0ff7e1afa724cec906d124b28fb
+      size: 1382
+    outs:
+    - path: outputs/metrics.json
+      hash: md5
+      md5: 196886af7799c1120b7ee17099e19603
+      size: 105

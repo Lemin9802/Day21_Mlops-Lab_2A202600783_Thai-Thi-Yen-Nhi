@@ -1,0 +1,33 @@
+stages:
+  prepare:
+    cmd: python run_stage.py generate_data.py
+    deps:
+    - generate_data.py
+    - run_stage.py
+    outs:
+    - data/eval.csv
+    - data/train_phase1.csv
+    - data/train_phase2.csv
+  train:
+    cmd: python run_stage.py src/train.py
+    deps:
+    - data/eval.csv
+    - data/train_phase1.csv
+    - run_stage.py
+    - src/train.py
+    params:
+    - max_depth
+    - min_samples_split
+    - n_estimators
+    outs:
+    - models/model.pkl
+  evaluate:
+    cmd: python run_stage.py src/evaluate.py
+    deps:
+    - data/eval.csv
+    - models/model.pkl
+    - run_stage.py
+    - src/evaluate.py
+    metrics:
+    - outputs/metrics.json:
+        cache: false
