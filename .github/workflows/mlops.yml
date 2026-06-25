@@ -168,6 +168,9 @@ jobs:
 
       - name: Generate daily training report
         run: python src/report.py
+      
+      - name: Check label distribution shift
+        run: python src/check_label_shift.py
 
       - name: Save training report as artifact
         uses: actions/upload-artifact@v4
@@ -176,6 +179,8 @@ jobs:
           path: |
             outputs/metrics.json
             outputs/daily_training_report.md
+            outputs/label_shift_metrics.json
+            outputs/label_shift_report.md
 
   eval:
     name: Eval Gate
